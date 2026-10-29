@@ -2,22 +2,38 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
+import json
 import logging
 
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, CoreState, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS
 from .proxy import register_views
+from .frontend import register_frontend
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "media_player"]
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     register_views(hass)
+
+    async def setup_card(_event=None):
+        manifest_path = Path(__file__).parent / "manifest.json"
+        version = json.loads(manifest_path.read_text(encoding="utf-8"))["version"]
+        try:
+            await register_frontend(hass, version)
+        except Exception:
+            _LOGGER.exception("Failed to register Audiobookshelf Home Hub card")
+
+    if hass.state == CoreState.running:
+        await setup_card()
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, setup_card)
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
