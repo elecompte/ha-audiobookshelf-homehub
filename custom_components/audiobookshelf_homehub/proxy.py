@@ -29,7 +29,7 @@ def _entry(hass, entry_id):
 def _signed(hass, path):
     # Home Assistant's signed-path authentication works for media elements,
     # which cannot attach Authorization headers to their HTTP Range requests.
-    return hass.components.http.async_sign_path(path, 600)
+    return hass.http.async_sign_path(path, 600)
 
 
 class PlayerApiView(HomeAssistantView):
