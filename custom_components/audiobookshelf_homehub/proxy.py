@@ -5,12 +5,14 @@ The bridge remains private. HA issues short-lived signed URLs to the browser.
 from __future__ import annotations
 
 import asyncio
+from datetime import timedelta
 import logging
 import re
 from urllib.parse import quote
 
 from aiohttp import ClientError, ClientTimeout, web
 from homeassistant.components.http import HomeAssistantView
+from homeassistant.components.http.auth import async_sign_path
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN
@@ -29,7 +31,7 @@ def _entry(hass, entry_id):
 def _signed(hass, path):
     # Home Assistant's signed-path authentication works for media elements,
     # which cannot attach Authorization headers to their HTTP Range requests.
-    return hass.http.async_sign_path(path, 600)
+    return async_sign_path(hass, path, timedelta(seconds=600))
 
 
 class PlayerApiView(HomeAssistantView):
