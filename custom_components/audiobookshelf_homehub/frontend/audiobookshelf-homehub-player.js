@@ -18,9 +18,25 @@ class AudiobookshelfHomeHubPlayer extends HTMLElement {
     this.audio.onplay=()=>this.$('play').textContent='Ⅱ';
     this.audio.onpause=()=>this.$('play').textContent='▶';
     this.audio.onended=()=>{if(this.index+1<this.tracks.length){this.loadTrack(this.index+1,this.tracks[this.index+1].startOffset).then(()=>this.audio.play()).catch(e=>this.status(e.message));}else{this.sync(true).catch(()=>{});this.status('Finished');}};
-    this.loadCurrent().catch(e=>this.status(e.message));
+    this._currentLoaded = false;
+    this._currentLoading = false;
+    this._loadWhenReady();
   }
-  set hass(value){this._hass=value;}
+  set hass(value){
+    this._hass=value;
+    this._loadWhenReady();
+  }
+  _loadWhenReady(){
+    if(!this._hass || !this.config || !this.$ || this._currentLoaded || this._currentLoading)return;
+    this._currentLoading=true;
+    this.loadCurrent().then(()=>{
+      this._currentLoaded=true;
+    }).catch(e=>{
+      this.status(e.message || 'Unable to load audiobook');
+    }).finally(()=>{
+      this._currentLoading=false;
+    });
+  }
   status(value){this.$('status').textContent=value;}
   async api(action,method='GET',body){
     if(!this._hass)throw Error('Home Assistant not connected');
