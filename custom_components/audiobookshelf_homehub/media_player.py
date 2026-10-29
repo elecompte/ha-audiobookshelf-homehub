@@ -5,7 +5,7 @@ transport commands until a session-aware browser-to-HA channel is implemented.
 """
 from __future__ import annotations
 
-from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerState, MediaType
+from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerEntityFeature, MediaPlayerState, MediaType
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -26,7 +26,7 @@ class AudiobookshelfBook(CoordinatorEntity, MediaPlayerEntity):
     _attr_has_entity_name = True
     _attr_name = "Audiobook"
     _attr_icon = "mdi:book-play"
-    _attr_supported_features = 0
+    _attr_supported_features = MediaPlayerEntityFeature(0)
 
     def __init__(self, coordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
