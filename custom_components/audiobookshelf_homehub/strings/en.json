@@ -1,0 +1,1 @@
+{"config":{"step":{"user":{"title":"Connect to the local Audiobookshelf bridge","data":{"url":"Bridge base URL"}}},"error":{"cannot_connect":"Cannot connect to the bridge","invalid_url":"Enter an HTTP or HTTPS URL"},"abort":{"already_configured":"This bridge is already configured"}}}
