@@ -40,9 +40,12 @@ class AudiobookshelfHomeHubPlayer extends HTMLElement {
   status(value){this.$('status').textContent=value;}
   async api(action,method='GET',body){
     if(!this._hass)throw Error('Home Assistant not connected');
-    const response=await this._hass.auth.fetchWithAuth(`${this.base}/${action}`,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
-    if(!response.ok)throw Error(`Home Assistant request failed (${response.status})`);
-    return response.json();
+    const path=`${this.base}/${action}`.replace(/^\/api\//,'');
+    try {
+      return await this._hass.callApi(method.toLowerCase(),path,body);
+    } catch(e) {
+      throw Error(`Audiobookshelf request failed: ${e.message || e}`);
+    }
   }
   async loadCurrent(){
     this.book=await this.api('current');
