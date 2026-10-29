@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from urllib.parse import quote
 
 from aiohttp import ClientError, ClientTimeout, web
@@ -47,7 +48,7 @@ class PlayerApiView(HomeAssistantView):
         return web.json_response(data, headers={"Cache-Control": "no-store"})
 
     async def post(self, request, entry_id, action):
-        if action not in ("start", "sync", "close"):
+        if action not in ("start", "sync", "close", "refresh"):
             raise web.HTTPNotFound()
         hass = request.app["hass"]
         state = _entry(hass, entry_id)
@@ -59,6 +60,13 @@ class PlayerApiView(HomeAssistantView):
             raise web.HTTPBadRequest(text="Invalid JSON")
         if request.content_length and request.content_length > 8192:
             raise web.HTTPRequestEntityTooLarge(max_size=8192, actual_size=request.content_length)
+        if action == "refresh":
+            handle = body.get("handle")
+            if not isinstance(handle, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", handle):
+                raise web.HTTPBadRequest(text="Invalid handle")
+            if handle not in state.setdefault("audio_handles", set()):
+                raise web.HTTPForbidden(text="Unknown audio handle")
+            return web.json_response({"url": _signed(hass, f"{PREFIX}/{entry_id}/audio/{handle}")}, headers={"Cache-Control": "no-store"})
         session = async_get_clientsession(hass)
         path = "/api/player/" + action
         try:
@@ -81,6 +89,7 @@ class PlayerApiView(HomeAssistantView):
                 handle = original.rsplit("/", 1)[-1]
                 if not handle or not all(c.isalnum() or c in "-_" for c in handle):
                     raise web.HTTPBadGateway(text="Invalid audio handle")
+                state.setdefault("audio_handles", set()).add(handle)
                 track["url"] = _signed(hass, f"{PREFIX}/{entry_id}/audio/{handle}")
         else:
             await state["coordinator"].async_request_refresh()
